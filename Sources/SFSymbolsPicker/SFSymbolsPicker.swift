@@ -6,22 +6,21 @@ public struct SFSymbolsPicker: View {
         SymbolLoader.isAvailable
     }
     
-    @Binding public var selection: String
-    
     @Environment(\.dismiss) private var dismiss
     
     @State private var search = ""
+    @State private var selection = ""
     @State private var allSymbols = [SFSymbolInfo]()
     @State private var visibleSymbols = [SFSymbolInfo]()
     
     private let topSymbols: [String]
-    
+    private let completion: (String) -> Void
     public init(
         topSymbols: [String] = Self.DefaultTopSymbols,
-        selection: Binding<String>
+        completion: @escaping (String) -> Void
     ) {
         self.topSymbols = topSymbols
-        self._selection = selection
+        self.completion = completion
     }
     
     public var body: some View {
@@ -50,7 +49,7 @@ public struct SFSymbolsPicker: View {
                         }
                         .onTapGesture {
                             selection = symbol.name
-                            dismiss()
+                            completion(symbol.name)
                         }
                 }
             }
@@ -59,8 +58,9 @@ public struct SFSymbolsPicker: View {
         }
         .scrollContentBackground(.hidden)
         .task {
+            let topSymbolsSet = Set(topSymbols)
             allSymbols = await SymbolLoader.getAllSymbols().sorted { symbol1, symbol2 in
-                topSymbols.contains(symbol1.name) && !topSymbols.contains(symbol2.name)
+                topSymbolsSet.contains(symbol1.name) && !topSymbolsSet.contains(symbol2.name)
             }
             visibleSymbols = allSymbols
         }
@@ -307,7 +307,7 @@ public struct SFSymbolsPicker: View {
 #Preview {
     @Previewable @State var selection: String = ""
     NavigationStack {
-        SFSymbolsPicker(selection: $selection)
+        SFSymbolsPicker(completion: { _ in })
             .tint(Color.blue)
     }
 }

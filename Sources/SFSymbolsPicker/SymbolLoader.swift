@@ -21,8 +21,12 @@ class SymbolLoader {
         return true
     }
     
+    
+    private static var cache = [SFSymbolInfo]()
     // Loads all symbols from the plist file
     static func getAllSymbols() async -> [SFSymbolInfo] {
+        if !cache.isEmpty { return cache }
+        
         guard
             let bundle = Bundle(identifier: "com.apple.CoreGlyphs"),
             let namesPath = bundle.path(forResource: "name_availability", ofType: "plist"),
@@ -37,8 +41,10 @@ class SymbolLoader {
         else { return [] }
         let notInOrder = Set(namesKeys).subtracting(Set(orderedNames))
         let allSymbols = orderedNames + notInOrder
-        return allSymbols.map {
+        let symbolModels = allSymbols.map {
             SFSymbolInfo(name: $0, searchTokens: searchKeys[$0] ?? [])
         }
+        cache = symbolModels
+        return cache
     }
 }
